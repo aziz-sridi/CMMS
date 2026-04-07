@@ -75,19 +75,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\USER\\.nuget\\packages\\": {}
+    "C:\\Users\\azizs\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\.net\\CMMS\\MaintenanceSystem.csproj",
+      "projectUniqueName": "D:\\Class\\dotnet\\CMMS\\MaintenanceSystem.csproj",
       "projectName": "MaintenanceSystem",
-      "projectPath": "D:\\.net\\CMMS\\MaintenanceSystem.csproj",
-      "packagesPath": "C:\\Users\\USER\\.nuget\\packages\\",
-      "outputPath": "D:\\.net\\CMMS\\obj\\",
+      "projectPath": "D:\\Class\\dotnet\\CMMS\\MaintenanceSystem.csproj",
+      "packagesPath": "C:\\Users\\azizs\\.nuget\\packages\\",
+      "outputPath": "D:\\Class\\dotnet\\CMMS\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\USER\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\azizs\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"

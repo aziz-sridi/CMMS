@@ -1,3 +1,5 @@
+using MyApp.Models;
+
 namespace MaintenanceSystem.Models
 {
     public enum LocationType

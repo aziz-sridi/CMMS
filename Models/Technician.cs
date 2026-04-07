@@ -9,4 +9,7 @@ public class Technician
     public string Email { get; set; } = string.Empty;
 
     public ICollection<Intervention> Interventions { get; set; } = new List<Intervention>();
+
+    // Notifications for the technician
+    public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 }
