@@ -8,10 +8,12 @@ namespace MyApp.Models
     public enum EquipmentStatus
     {
         Active,
-        OutOfService,
+        OutOfService, // najmou nbdlouha nzidou degraded
         UnderMaintenance
     }
 
+    // nzdou champ enum 
+    //  
     public class Equipment
     {
         public Guid Id { get; set; }
