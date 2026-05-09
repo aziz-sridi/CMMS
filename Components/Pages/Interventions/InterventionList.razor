@@ -1,0 +1,76 @@
+@page "/interventions"
+@attribute [Authorize]
+@inject IInterventionService InterventionService
+
+<PageTitle>Interventions — CMMS</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="bi bi-wrench-adjustable me-2"></i>Interventions</h2>
+    <AuthorizeView Roles="Manager">
+        <a href="/interventions/create" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>New Intervention</a>
+    </AuthorizeView>
+</div>
+
+<form method="get" class="mb-3">
+    <div class="input-group" style="max-width:420px">
+        <input type="text" name="search" value="@Search" class="form-control" placeholder="Search technician, equipment, notes…" />
+        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+        @if (!string.IsNullOrEmpty(Search))
+        {
+            <a href="/interventions" class="btn btn-outline-danger"><i class="bi bi-x-lg"></i></a>
+        }
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Equipment</th><th>Technician</th><th>Start</th>
+                    <th>End</th><th>Cost</th><th>Notes</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in interventions)
+                {
+                    <tr>
+                        <td class="fw-semibold">@item.Failure.Equipment.Name</td>
+                        <td>@item.Technician.Name</td>
+                        <td>@item.StartDate.ToString("yyyy-MM-dd")</td>
+                        <td>@(item.EndDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                        <td>@item.Cost.ToString("N2")</td>
+                        <td class="text-muted small" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">@item.Notes</td>
+                        <td>
+                            <AuthorizeView Context="auth">
+                                @if (auth.User.IsInRole("Manager") ||
+                                     (auth.User.IsInRole("Technician") && item.Technician.Email == auth.User.Identity?.Name))
+                                {
+                                    <a href="/interventions/edit/@item.Id" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                                }
+                                @if (auth.User.IsInRole("Manager"))
+                                {
+                                    <a href="/interventions/delete/@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                                }
+                            </AuthorizeView>
+                        </td>
+                    </tr>
+                }
+                @if (!interventions.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">No interventions found.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? Search { get; set; }
+    private List<Intervention> interventions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        interventions = await InterventionService.GetAllAsync(Search);
+    }
+}

@@ -1,0 +1,35 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MaintenanceSystem", "MaintenanceSystem.csproj", "{0BB169DE-16B1-7E5D-4080-833691D5E78B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Domain", "Domain", "{7E433E6F-D1C0-4EC8-B9C1-CB7C3B9D3F1A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Application", "Application", "{CBA75FA3-10D2-4289-9F5A-F7D9BEF0A31A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{46E2BDF7-4FBC-4A27-8D26-27E029A2A2ED}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{D79FC611-9A80-4DB7-BB16-95D301D6A44C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0BB169DE-16B1-7E5D-4080-833691D5E78B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0BB169DE-16B1-7E5D-4080-833691D5E78B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0BB169DE-16B1-7E5D-4080-833691D5E78B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0BB169DE-16B1-7E5D-4080-833691D5E78B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{0BB169DE-16B1-7E5D-4080-833691D5E78B} = {D79FC611-9A80-4DB7-BB16-95D301D6A44C}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {068A9101-EA0A-458A-850D-7D07A89228DB}
+	EndGlobalSection
+EndGlobal

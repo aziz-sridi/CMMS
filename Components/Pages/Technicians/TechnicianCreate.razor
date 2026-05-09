@@ -1,0 +1,127 @@
+@page "/technicians/create"
+@attribute [Authorize(Roles = "Manager")]
+@inject ITechnicianService TechnicianService
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager Nav
+
+<PageTitle>Add Technician — CMMS</PageTitle>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/technicians" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h2 class="mb-0">Add Technician</h2>
+</div>
+
+<div class="card" style="max-width:560px">
+    <div class="card-body">
+        <EditForm Model="Input" method="post" OnValidSubmit="HandleSubmitAsync" FormName="create-technician">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="alert alert-danger" />
+
+            <div class="mb-3">
+                <label class="form-label">Full Name</label>
+                <InputText @bind-Value="Input!.Name" class="form-control" />
+                <ValidationMessage For="() => Input!.Name" class="text-danger small" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Specialty</label>
+                <InputText @bind-Value="Input!.Specialty" class="form-control" />
+                <ValidationMessage For="() => Input!.Specialty" class="text-danger small" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Phone</label>
+                <InputText @bind-Value="Input!.Phone" class="form-control" type="tel" />
+                <ValidationMessage For="() => Input!.Phone" class="text-danger small" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <InputText @bind-Value="Input!.Email" class="form-control" type="email" />
+                <ValidationMessage For="() => Input!.Email" class="text-danger small" />
+            </div>
+
+            <hr class="my-3" />
+            <p class="text-muted small mb-3">Login credentials — the technician will sign in with this email and password.</p>
+
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <InputText @bind-Value="Input!.Password" class="form-control" type="password" autocomplete="new-password" />
+                <ValidationMessage For="() => Input!.Password" class="text-danger small" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Confirm Password</label>
+                <InputText @bind-Value="Input!.ConfirmPassword" class="form-control" type="password" autocomplete="new-password" />
+                <ValidationMessage For="() => Input!.ConfirmPassword" class="text-danger small" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage)) { <div class="alert alert-danger">@errorMessage</div> }
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a href="/technicians" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm(FormName = "create-technician")] public InputModel? Input { get; set; }
+    private string? errorMessage;
+
+    protected override void OnInitialized() => Input ??= new();
+
+    private async Task HandleSubmitAsync()
+    {
+        var email = Input!.Email.Trim().ToLowerInvariant();
+
+        if (Input.Password != Input.ConfirmPassword)
+        {
+            errorMessage = "Passwords do not match.";
+            return;
+        }
+
+        if (await TechnicianService.EmailExistsAsync(email))
+        {
+            errorMessage = "Email already in use by another technician.";
+            return;
+        }
+
+        if (await UserManager.FindByEmailAsync(email) is not null)
+        {
+            errorMessage = "Email already in use by another user account.";
+            return;
+        }
+
+        var user = new ApplicationUser
+        {
+            UserName = email,
+            Email = email,
+            FullName = Input.Name.Trim(),
+            EmailConfirmed = true
+        };
+        var createResult = await UserManager.CreateAsync(user, Input.Password);
+        if (!createResult.Succeeded)
+        {
+            errorMessage = string.Join("; ", createResult.Errors.Select(e => e.Description));
+            return;
+        }
+        await UserManager.AddToRoleAsync(user, "Technician");
+
+        await TechnicianService.CreateAsync(new Technician
+        {
+            Name = Input.Name.Trim(),
+            Specialty = Input.Specialty.Trim(),
+            Phone = Input.Phone.Trim(),
+            Email = email
+        });
+        Nav.NavigateTo("/technicians");
+    }
+
+    public sealed class InputModel
+    {
+        [Required, StringLength(120, MinimumLength = 2)] public string Name { get; set; } = string.Empty;
+        [Required, StringLength(120, MinimumLength = 2)] public string Specialty { get; set; } = string.Empty;
+        [Required, Phone, StringLength(30, MinimumLength = 6)] public string Phone { get; set; } = string.Empty;
+        [Required, EmailAddress, StringLength(255)] public string Email { get; set; } = string.Empty;
+        [Required, StringLength(100, MinimumLength = 6)] public string Password { get; set; } = string.Empty;
+        [Required, Compare(nameof(Password), ErrorMessage = "Passwords do not match.")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

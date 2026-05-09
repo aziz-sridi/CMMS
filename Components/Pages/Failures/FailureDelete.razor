@@ -1,0 +1,47 @@
+@page "/failures/delete/{Id:guid}"
+@attribute [Authorize(Roles = "Manager")]
+@inject IFailureService FailureService
+@inject NavigationManager Nav
+
+<PageTitle>Delete Failure — CMMS</PageTitle>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/failures" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h2 class="mb-0">Delete Failure</h2>
+</div>
+
+@if (entity is not null)
+{
+    <div class="card border-danger shadow-sm" style="max-width:480px">
+        <div class="card-body">
+            <p class="text-danger fw-semibold">Delete this failure and all its interventions?</p>
+            <dl class="row">
+                <dt class="col-sm-4">Equipment</dt><dd class="col-sm-8">@entity.Equipment.Name</dd>
+                <dt class="col-sm-4">Description</dt><dd class="col-sm-8">@entity.Description</dd>
+                <dt class="col-sm-4">Status</dt><dd class="col-sm-8">@entity.Status</dd>
+            </dl>
+            <EditForm Model="_confirm" method="post" OnValidSubmit="ExecuteDeleteAsync" FormName="confirm-delete">
+                <button type="submit" class="btn btn-danger me-2">Yes, Delete</button>
+                <a href="/failures" class="btn btn-outline-secondary">Cancel</a>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private Failure? entity;
+    private readonly object _confirm = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        entity = await FailureService.GetByIdAsync(Id);
+        if (entity is null) Nav.NavigateTo("/failures");
+    }
+
+    private async Task ExecuteDeleteAsync()
+    {
+        await FailureService.DeleteAsync(Id);
+        Nav.NavigateTo("/failures");
+    }
+}

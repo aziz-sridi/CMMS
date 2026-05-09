@@ -1,0 +1,77 @@
+@page "/spare-parts/create"
+@attribute [Authorize(Roles = "Manager")]
+@inject ISparePartService SparePartService
+@inject IEquipmentService EquipmentService
+@inject NavigationManager Nav
+
+<PageTitle>Add Spare Part — CMMS</PageTitle>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/spare-parts" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h2 class="mb-0">Add Spare Part</h2>
+</div>
+
+<div class="card shadow-sm" style="max-width:520px">
+    <div class="card-body">
+        <EditForm Model="Input" method="post" OnValidSubmit="HandleSubmitAsync" FormName="create-sparepart">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="alert alert-danger" />
+            <div class="mb-3">
+                <label class="form-label">Part Name</label>
+                <InputText @bind-Value="Input!.Name" class="form-control" />
+                <ValidationMessage For="() => Input!.Name" class="text-danger small" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Part Number</label>
+                <InputText @bind-Value="Input!.PartNumber" class="form-control font-monospace" />
+                <ValidationMessage For="() => Input!.PartNumber" class="text-danger small" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Quantity</label>
+                <InputNumber @bind-Value="Input!.Quantity" class="form-control" min="0" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Equipment (optional)</label>
+                <InputSelect @bind-Value="Input!.EquipmentId" class="form-select">
+                    <option value="@((Guid?)null)">— Not linked —</option>
+                    @foreach (var e in equipment) { <option value="@e.Id">@e.Name</option> }
+                </InputSelect>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a href="/spare-parts" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm(FormName = "create-sparepart")] public InputModel? Input { get; set; }
+    private List<Domain.Entities.Equipment> equipment = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        equipment = await EquipmentService.GetAllAsync();
+        Input ??= new();
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        await SparePartService.CreateAsync(new SparePart
+        {
+            Name = Input!.Name.Trim(),
+            PartNumber = Input.PartNumber.Trim(),
+            Quantity = Input.Quantity,
+            EquipmentId = Input.EquipmentId
+        });
+        Nav.NavigateTo("/spare-parts");
+    }
+
+    public sealed class InputModel
+    {
+        [Required, StringLength(150, MinimumLength = 2)] public string Name { get; set; } = string.Empty;
+        [Required, StringLength(80, MinimumLength = 2)] public string PartNumber { get; set; } = string.Empty;
+        [Range(0, int.MaxValue)] public int Quantity { get; set; }
+        public Guid? EquipmentId { get; set; }
+    }
+}

@@ -1,0 +1,67 @@
+@page "/equipment/delete/{Id:guid}"
+@attribute [Authorize(Roles = "Manager")]
+@inject IEquipmentService EquipmentService
+@inject IFailureService FailureService
+@inject NavigationManager Nav
+
+<PageTitle>Delete Equipment — CMMS</PageTitle>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/equipment" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h2 class="mb-0">Delete Equipment</h2>
+</div>
+
+@if (entity is not null)
+{
+    <div class="card border-danger shadow-sm" style="max-width:500px">
+        <div class="card-body">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+            <p class="text-danger fw-semibold">Are you sure you want to delete this equipment?</p>
+            <dl class="row">
+                <dt class="col-sm-4">Name</dt><dd class="col-sm-8">@entity.Name</dd>
+                <dt class="col-sm-4">Serial Number</dt><dd class="col-sm-8 font-monospace">@entity.SerialNumber</dd>
+                <dt class="col-sm-4">Location</dt><dd class="col-sm-8">@entity.Location.Name</dd>
+                <dt class="col-sm-4">Status</dt><dd class="col-sm-8">@entity.Status</dd>
+            </dl>
+            <p class="text-muted small">All closed failures and their interventions will also be removed.</p>
+
+            <EditForm Model="_confirm" method="post" OnValidSubmit="ExecuteDeleteAsync" FormName="confirm-delete">
+                <button type="submit" class="btn btn-danger me-2">Yes, Delete</button>
+                <a href="/equipment" class="btn btn-outline-secondary">Cancel</a>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private Domain.Entities.Equipment? entity;
+    private string? errorMessage;
+    private readonly object _confirm = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        entity = await EquipmentService.GetByIdAsync(Id);
+        if (entity is null) Nav.NavigateTo("/equipment");
+    }
+
+    private async Task ExecuteDeleteAsync()
+    {
+        entity = await EquipmentService.GetByIdAsync(Id);
+        if (entity is null) { Nav.NavigateTo("/equipment"); return; }
+
+        var failures = await FailureService.GetByEquipmentAsync(Id);
+        if (failures.Any(f => f.Status != FailureStatus.Closed))
+        {
+            errorMessage = "Cannot delete equipment with open or in-progress failures. Close them first.";
+            return;
+        }
+
+        await EquipmentService.DeleteAsync(Id);
+        Nav.NavigateTo("/equipment");
+    }
+}

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --surface:        #ffffff;
+            --surface-muted:  #f7f7f5;
+            --border:         #e7e5e1;
+            --border-strong:  #d6d3ce;
+            --text:           #1c1b18;
+            --text-muted:     #6b6862;
+            --accent:         #1f2937;
+            --accent-soft:    #f1f3f5;
+            --danger:         #b42318;
+            --warning:        #b54708;
+            --success:        #2f7a3c;
+        }
+
+        html, body {
+            background-color: var(--surface-muted);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-feature-settings: 'cv11', 'ss01';
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, h4, h5 { font-weight: 600; letter-spacing: -0.01em; }
+        h2 { font-size: 1.4rem; }
+        h3 { font-size: 1.15rem; }
+        a  { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Top bar */
+        .app-nav {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+        .app-nav .navbar-brand {
+            color: var(--text); font-weight: 700; letter-spacing: -0.02em;
+        }
+        .app-nav .nav-link {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: .92rem;
+            padding: .35rem .7rem;
+            border-radius: 6px;
+            margin: 0 1px;
+        }
+        .app-nav .nav-link:hover { background: var(--accent-soft); color: var(--text); }
+        .app-nav .nav-link.active { background: var(--accent-soft); color: var(--text); }
+        .app-nav .navbar-text { color: var(--text-muted); }
+        .role-chip {
+            display: inline-block; font-size: .72rem; padding: .12rem .5rem;
+            border-radius: 999px; border: 1px solid var(--border-strong);
+            color: var(--text-muted); background: var(--surface-muted);
+            margin-left: .35rem;
+        }
+
+        /* Cards & surfaces */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: none;
+        }
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            color: var(--text);
+        }
+        .shadow-sm, .shadow { box-shadow: none !important; }
+
+        /* KPI tiles */
+        .kpi {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.1rem;
+            height: 100%;
+        }
+        .kpi-label {
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .kpi-value {
+            font-size: 1.85rem;
+            font-weight: 600;
+            margin-top: .25rem;
+            letter-spacing: -0.02em;
+        }
+        .kpi-foot {
+            font-size: .8rem;
+            color: var(--text-muted);
+            margin-top: .25rem;
+        }
+        .kpi-foot a { color: var(--text-muted); }
+        .kpi-foot a:hover { color: var(--text); text-decoration: underline; }
+
+        /* Tables */
+        .table { color: var(--text); margin-bottom: 0; }
+        .table > :not(caption) > * > * { padding: .7rem .9rem; }
+        .table > thead {
+            background: var(--surface-muted);
+            color: var(--text-muted);
+        }
+        .table > thead th {
+            font-size: .75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            border-bottom: 1px solid var(--border);
+        }
+        .table-dark, .thead-dark { background-color: var(--surface-muted) !important; color: var(--text-muted) !important; }
+        .table-light { background-color: var(--surface-muted) !important; }
+        .table-hover tbody tr:hover { background: var(--accent-soft); }
+
+        /* Badges flatter */
+        .badge { font-weight: 500; padding: .3em .55em; border-radius: 6px; }
+        .bg-primary    { background-color: #1f2937 !important; }
+        .bg-secondary  { background-color: #6b6862 !important; }
+        .bg-success    { background-color: var(--success) !important; }
+        .bg-warning    { background-color: #e7b800 !important; color: var(--text) !important; }
+        .bg-danger     { background-color: var(--danger) !important; }
+
+        /* Buttons */
+        .btn { font-weight: 500; border-radius: 7px; }
+        .btn-primary {
+            background-color: var(--accent); border-color: var(--accent);
+        }
+        .btn-primary:hover, .btn-primary:focus {
+            background-color: #111827; border-color: #111827;
+        }
+        .btn-outline-primary {
+            color: var(--accent); border-color: var(--border-strong);
+        }
+        .btn-outline-primary:hover {
+            background: var(--accent); border-color: var(--accent);
+        }
+        .btn-outline-secondary {
+            color: var(--text-muted); border-color: var(--border-strong);
+        }
+        .btn-outline-secondary:hover {
+            background: var(--accent-soft); color: var(--text); border-color: var(--border-strong);
+        }
+        .btn-outline-danger { color: var(--danger); border-color: var(--border-strong); }
+        .btn-outline-danger:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
+
+        /* Forms */
+        .form-control, .form-select {
+            border: 1px solid var(--border-strong);
+            border-radius: 7px;
+            background: var(--surface);
+            color: var(--text);
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(31,41,55,.08);
+        }
+        .form-label { font-weight: 500; font-size: .9rem; color: var(--text); }
+
+        /* Status dots */
+        .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: .4rem; vertical-align: middle; }
+        .dot-success { background: var(--success); }
+        .dot-warning { background: #d97706; }
+        .dot-muted   { background: #9ca3af; }
+        .dot-danger  { background: var(--danger); }
+
+        /* Page title */
+        .page-title {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+        .page-subtitle { color: var(--text-muted); font-size: .9rem; margin-top: -.4rem; margin-bottom: 1rem; }
+
+        /* Auth shell */
+        .auth-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem 2rem 1.6rem;
+            max-width: 420px;
+            width: 100%;
+        }
+        .auth-brand { font-weight: 700; letter-spacing: -0.02em; font-size: 1.4rem; }
+    </style>
+    <HeadOutlet />
+</head>
+<body>
+    <Routes />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="_framework/blazor.web.js"></script>
+</body>
+</html>

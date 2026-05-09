@@ -1,0 +1,42 @@
+@page "/Identity/Account/Register"
+@layout CMMS.Components.Layout.MainLayout
+
+<PageTitle>Register — CMMS</PageTitle>
+
+<div class="d-flex justify-content-center mt-5">
+    <div class="auth-card">
+        <div class="auth-brand text-center mb-1">Create an account</div>
+        <div class="text-muted small text-center mb-4">A manager will assign your role after sign-up.</div>
+
+        @if (!string.IsNullOrEmpty(Error))
+        {
+            <div class="alert alert-danger py-2 small">@Error</div>
+        }
+
+        <form method="post" action="/Identity/Account/Register">
+            <div class="mb-3">
+                <label class="form-label">Full name</label>
+                <input type="text" name="fullName" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" class="form-control" minlength="6" required />
+                <div class="form-text small">Minimum 6 characters.</div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Register</button>
+        </form>
+
+        <hr class="my-3" />
+        <p class="text-center small mb-0">
+            Already have an account? <a href="/Identity/Account/Login">Sign in</a>
+        </p>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "error")] public string? Error { get; set; }
+}

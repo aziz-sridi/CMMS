@@ -1,0 +1,87 @@
+@page "/equipment"
+@attribute [Authorize]
+@inject IEquipmentService EquipmentService
+
+<PageTitle>Equipment — CMMS</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="bi bi-cpu me-2"></i>Equipment</h2>
+    <AuthorizeView Roles="Manager">
+        <a href="/equipment/create" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Add Equipment</a>
+    </AuthorizeView>
+</div>
+
+<form method="get" class="mb-3">
+    <div class="input-group" style="max-width:420px">
+        <input type="text" name="search" value="@Search" class="form-control" placeholder="Search name or serial number…" />
+        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+        @if (!string.IsNullOrEmpty(Search))
+        {
+            <a href="/equipment" class="btn btn-outline-danger" title="Clear"><i class="bi bi-x-lg"></i></a>
+        }
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Name</th><th>Serial Number</th><th>Location</th>
+                    <th>Status</th><th>Criticality</th><th>Purchase Date</th>
+                    <AuthorizeView Roles="Manager"><th></th></AuthorizeView>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (Equipment item in equipment)
+                {
+                    <tr>
+                        <td class="fw-semibold">@item.Name</td>
+                        <td class="text-muted small font-monospace">@item.SerialNumber</td>
+                        <td>@item.Location.Name</td>
+                        <td>
+                            @{
+                                var badge = item.Status switch
+                                {
+                                    EquipmentStatus.Active => "bg-success",
+                                    EquipmentStatus.UnderMaintenance => "bg-warning text-dark",
+                                    _ => "bg-secondary"
+                                };
+                            }
+                            <span class="badge @badge">@item.Status</span>
+                        </td>
+                        <td>
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <i class="bi @(i <= item.Criticality ? "bi-star-fill text-warning" : "bi-star text-muted") small"></i>
+                            }
+                        </td>
+                        <td>@item.PurchaseDate.ToString("yyyy-MM-dd")</td>
+                        <AuthorizeView Roles="Manager">
+                            <td>
+                                <a href="/equipment/edit/@item.Id" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                                <a href="/equipment/delete/@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                            </td>
+                        </AuthorizeView>
+                    </tr>
+                }
+                @if (!equipment.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">No equipment found.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Search { get; set; }
+
+    private List<Domain.Entities.Equipment> equipment = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        equipment = await EquipmentService.GetAllAsync(Search);
+    }
+}

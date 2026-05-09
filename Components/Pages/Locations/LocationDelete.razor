@@ -1,0 +1,55 @@
+@page "/locations/delete/{Id:guid}"
+@attribute [Authorize(Roles = "Manager")]
+@inject ILocationService LocationService
+@inject NavigationManager Nav
+
+<PageTitle>Delete Location — CMMS</PageTitle>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/locations" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h2 class="mb-0">Delete Location</h2>
+</div>
+
+@if (entity is not null)
+{
+    <div class="card border-danger shadow-sm" style="max-width:440px">
+        <div class="card-body">
+            @if (!string.IsNullOrEmpty(errorMessage)) { <div class="alert alert-danger">@errorMessage</div> }
+            <p class="text-danger fw-semibold">Delete this location?</p>
+            <dl class="row">
+                <dt class="col-sm-4">Name</dt><dd class="col-sm-8">@entity.Name</dd>
+                <dt class="col-sm-4">Type</dt><dd class="col-sm-8">@entity.Type</dd>
+            </dl>
+            <EditForm Model="_confirm" method="post" OnValidSubmit="ExecuteDeleteAsync" FormName="confirm-delete">
+                <button type="submit" class="btn btn-danger me-2">Yes, Delete</button>
+                <a href="/locations" class="btn btn-outline-secondary">Cancel</a>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private Location? entity;
+    private string? errorMessage;
+    private readonly object _confirm = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        entity = await LocationService.GetByIdAsync(Id);
+        if (entity is null) Nav.NavigateTo("/locations");
+    }
+
+    private async Task ExecuteDeleteAsync()
+    {
+        entity = await LocationService.GetByIdAsync(Id);
+        if (entity is null) { Nav.NavigateTo("/locations"); return; }
+        if (entity.Equipments.Any())
+        {
+            errorMessage = "Cannot delete a location that has equipment assigned.";
+            return;
+        }
+        await LocationService.DeleteAsync(Id);
+        Nav.NavigateTo("/locations");
+    }
+}

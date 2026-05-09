@@ -1,0 +1,87 @@
+@page "/technicians/edit/{Id:guid}"
+@attribute [Authorize(Roles = "Manager")]
+@inject ITechnicianService TechnicianService
+@inject NavigationManager Nav
+
+<PageTitle>Edit Technician — CMMS</PageTitle>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/technicians" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h2 class="mb-0">Edit Technician</h2>
+</div>
+
+<div class="card shadow-sm" style="max-width:560px">
+    <div class="card-body">
+        <EditForm Model="Input" method="post" OnValidSubmit="HandleSubmitAsync" FormName="edit-technician">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="alert alert-danger" />
+            <div class="mb-3">
+                <label class="form-label">Full Name</label>
+                <InputText @bind-Value="Input!.Name" class="form-control" />
+                <ValidationMessage For="() => Input!.Name" class="text-danger small" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Specialty</label>
+                <InputText @bind-Value="Input!.Specialty" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Phone</label>
+                <InputText @bind-Value="Input!.Phone" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <InputText @bind-Value="Input!.Email" class="form-control" />
+                <ValidationMessage For="() => Input!.Email" class="text-danger small" />
+            </div>
+            @if (!string.IsNullOrEmpty(errorMessage)) { <div class="alert alert-danger">@errorMessage</div> }
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="/technicians" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    [SupplyParameterFromForm(FormName = "edit-technician")] public InputModel? Input { get; set; }
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Input is null)
+        {
+            var e = await TechnicianService.GetByIdAsync(Id);
+            if (e is null) { Nav.NavigateTo("/technicians"); return; }
+            Input = new InputModel { Name = e.Name, Specialty = e.Specialty, Phone = e.Phone, Email = e.Email };
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        var email = Input!.Email.Trim().ToLowerInvariant();
+        if (await TechnicianService.EmailExistsAsync(email, excludeId: Id))
+        {
+            errorMessage = "Email already in use.";
+            return;
+        }
+        var ok = await TechnicianService.UpdateAsync(new Technician
+        {
+            Id = Id,
+            Name = Input.Name.Trim(),
+            Specialty = Input.Specialty.Trim(),
+            Phone = Input.Phone.Trim(),
+            Email = email
+        });
+        if (!ok) { Nav.NavigateTo("/technicians"); return; }
+        Nav.NavigateTo("/technicians");
+    }
+
+    public sealed class InputModel
+    {
+        [Required, StringLength(120, MinimumLength = 2)] public string Name { get; set; } = string.Empty;
+        [Required, StringLength(120, MinimumLength = 2)] public string Specialty { get; set; } = string.Empty;
+        [Required, Phone, StringLength(30, MinimumLength = 6)] public string Phone { get; set; } = string.Empty;
+        [Required, EmailAddress, StringLength(255)] public string Email { get; set; } = string.Empty;
+    }
+}

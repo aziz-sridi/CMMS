@@ -1,0 +1,61 @@
+@page "/technicians"
+@attribute [Authorize]
+@inject ITechnicianService TechnicianService
+
+<PageTitle>Technicians — CMMS</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="bi bi-person-badge me-2"></i>Technicians</h2>
+    <AuthorizeView Roles="Manager">
+        <a href="/technicians/create" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Add Technician</a>
+    </AuthorizeView>
+</div>
+
+<form method="get" class="mb-3">
+    <div class="input-group" style="max-width:400px">
+        <input type="text" name="search" value="@Search" class="form-control" placeholder="Search name, specialty or email…" />
+        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+        @if (!string.IsNullOrEmpty(Search)) { <a href="/technicians" class="btn btn-outline-danger"><i class="bi bi-x-lg"></i></a> }
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Name</th><th>Specialty</th><th>Phone</th><th>Email</th>
+                    <AuthorizeView Roles="Manager"><th></th></AuthorizeView>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in technicians)
+                {
+                    <tr>
+                        <td class="fw-semibold">@item.Name</td>
+                        <td>@item.Specialty</td>
+                        <td class="small">@item.Phone</td>
+                        <td class="small text-muted">@item.Email</td>
+                        <AuthorizeView Roles="Manager">
+                            <td>
+                                <a href="/technicians/edit/@item.Id" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                                <a href="/technicians/delete/@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                            </td>
+                        </AuthorizeView>
+                    </tr>
+                }
+                @if (!technicians.Any()) { <tr><td colspan="5" class="text-center text-muted py-4">No technicians found.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? Search { get; set; }
+    private List<Technician> technicians = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        technicians = await TechnicianService.GetAllAsync(Search);
+    }
+}

@@ -1,0 +1,110 @@
+@page "/"
+@attribute [Authorize]
+@inject IFailureService FailureService
+@inject IEquipmentService EquipmentService
+@inject IInterventionService InterventionService
+@inject ISparePartService SparePartService
+
+<PageTitle>Dashboard — CMMS</PageTitle>
+
+<div class="page-title">
+    <div>
+        <h2 class="mb-1">Dashboard</h2>
+        <div class="page-subtitle">Overview of plant maintenance activity.</div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi">
+            <div class="kpi-label">Open failures</div>
+            <div class="kpi-value">@openFailuresCount</div>
+            <div class="kpi-foot"><a href="/failures">View all →</a></div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi">
+            <div class="kpi-label">Interventions this month</div>
+            <div class="kpi-value">@interventionsThisMonth</div>
+            <div class="kpi-foot">Cost: @totalCostThisMonth.ToString("N0") TND · <a href="/interventions">View all →</a></div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi">
+            <div class="kpi-label">Equipment status</div>
+            <div class="mt-2 small">
+                <div class="d-flex justify-content-between py-1">
+                    <span><span class="dot dot-success"></span>Active</span>
+                    <strong>@equipmentByStatus.GetValueOrDefault(EquipmentStatus.Active, 0)</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span><span class="dot dot-warning"></span>Maintenance</span>
+                    <strong>@equipmentByStatus.GetValueOrDefault(EquipmentStatus.UnderMaintenance, 0)</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span><span class="dot dot-muted"></span>Out of service</span>
+                    <strong>@equipmentByStatus.GetValueOrDefault(EquipmentStatus.OutOfService, 0)</strong>
+                </div>
+            </div>
+            <div class="kpi-foot mt-2"><a href="/equipment">View all →</a></div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi">
+            <div class="kpi-label">Low stock parts</div>
+            <div class="kpi-value">@lowStockParts.Count</div>
+            <div class="kpi-foot">Threshold &lt; 5 · <a href="/spare-parts">View all →</a></div>
+        </div>
+    </div>
+</div>
+
+@if (lowStockParts.Any())
+{
+    <div class="card">
+        <div class="card-header">Low stock spare parts</div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr><th>Part</th><th>Part number</th><th>Equipment</th><th class="text-end">Qty</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var part in lowStockParts)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@part.Name</td>
+                            <td class="text-muted small">@part.PartNumber</td>
+                            <td>@(part.Equipment?.Name ?? "—")</td>
+                            <td class="text-end">
+                                <span class="badge @(part.Quantity == 0 ? "bg-danger" : "bg-warning")">@part.Quantity</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@code {
+    private int openFailuresCount;
+    private Dictionary<EquipmentStatus, int> equipmentByStatus = new();
+    private int interventionsThisMonth;
+    private double totalCostThisMonth;
+    private List<SparePart> lowStockParts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        openFailuresCount = await FailureService.CountOpenAsync();
+        equipmentByStatus = await EquipmentService.GetStatusBreakdownAsync();
+
+        var now = DateTime.UtcNow;
+        var interventions = await InterventionService.GetInMonthAsync(now.Year, now.Month);
+        interventionsThisMonth = interventions.Count;
+        totalCostThisMonth = await InterventionService.GetTotalCostInMonthAsync(now.Year, now.Month);
+
+        lowStockParts = await SparePartService.GetLowStockAsync(threshold: 5);
+    }
+}

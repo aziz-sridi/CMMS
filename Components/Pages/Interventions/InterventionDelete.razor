@@ -1,0 +1,48 @@
+@page "/interventions/delete/{Id:guid}"
+@attribute [Authorize(Roles = "Manager")]
+@inject IInterventionService InterventionService
+@inject NavigationManager Nav
+
+<PageTitle>Delete Intervention — CMMS</PageTitle>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/interventions" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h2 class="mb-0">Delete Intervention</h2>
+</div>
+
+@if (entity is not null)
+{
+    <div class="card border-danger shadow-sm" style="max-width:480px">
+        <div class="card-body">
+            <p class="text-danger fw-semibold">Delete this intervention?</p>
+            <dl class="row">
+                <dt class="col-sm-4">Equipment</dt><dd class="col-sm-8">@entity.Failure.Equipment.Name</dd>
+                <dt class="col-sm-4">Technician</dt><dd class="col-sm-8">@entity.Technician.Name</dd>
+                <dt class="col-sm-4">Start Date</dt><dd class="col-sm-8">@entity.StartDate.ToString("yyyy-MM-dd")</dd>
+                <dt class="col-sm-4">Cost</dt><dd class="col-sm-8">@entity.Cost.ToString("N2")</dd>
+            </dl>
+            <EditForm Model="_confirm" method="post" OnValidSubmit="ExecuteDeleteAsync" FormName="confirm-delete">
+                <button type="submit" class="btn btn-danger me-2">Yes, Delete</button>
+                <a href="/interventions" class="btn btn-outline-secondary">Cancel</a>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private Intervention? entity;
+    private readonly object _confirm = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        entity = await InterventionService.GetByIdAsync(Id);
+        if (entity is null) Nav.NavigateTo("/interventions");
+    }
+
+    private async Task ExecuteDeleteAsync()
+    {
+        await InterventionService.DeleteAsync(Id);
+        Nav.NavigateTo("/interventions");
+    }
+}

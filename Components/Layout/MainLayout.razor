@@ -1,0 +1,52 @@
+@inherits LayoutComponentBase
+
+<nav class="navbar navbar-expand-lg app-nav">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">CMMS <span class="text-muted fw-normal small">· Leoni Tunisia</span></a>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link" href="/">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="/equipment">Equipment</a></li>
+                <li class="nav-item"><a class="nav-link" href="/failures">Failures</a></li>
+                <li class="nav-item"><a class="nav-link" href="/interventions">Interventions</a></li>
+                <li class="nav-item"><a class="nav-link" href="/technicians">Technicians</a></li>
+                <li class="nav-item"><a class="nav-link" href="/locations">Locations</a></li>
+                <li class="nav-item"><a class="nav-link" href="/spare-parts">Spare Parts</a></li>
+                <AuthorizeView Roles="Manager">
+                    <li class="nav-item"><a class="nav-link" href="/users">Users</a></li>
+                </AuthorizeView>
+            </ul>
+            <AuthorizeView>
+                <Authorized>
+                    <span class="navbar-text small me-3">
+                        @context.User.Identity?.Name
+                        @if (context.User.IsInRole("Manager"))
+                        {
+                            <span class="role-chip">Manager</span>
+                        }
+                        else if (context.User.IsInRole("Technician"))
+                        {
+                            <span class="role-chip">Technician</span>
+                        }
+                    </span>
+                    <form method="post" action="/Identity/Account/Logout">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="returnUrl" value="/" />
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">Sign out</button>
+                    </form>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="/Identity/Account/Login" class="btn btn-sm btn-outline-secondary me-2">Sign in</a>
+                    <a href="/Identity/Account/Register" class="btn btn-sm btn-primary">Register</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4 py-4" style="max-width:1400px;margin:0 auto">
+    @Body
+</div>

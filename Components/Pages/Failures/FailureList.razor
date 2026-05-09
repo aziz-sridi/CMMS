@@ -1,0 +1,103 @@
+@page "/failures"
+@attribute [Authorize]
+@inject IFailureService FailureService
+
+<PageTitle>Failures — CMMS</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="bi bi-exclamation-triangle me-2"></i>Failures</h2>
+    <AuthorizeView Roles="Manager">
+        <a href="/failures/create" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Report Failure</a>
+    </AuthorizeView>
+</div>
+
+<form method="get" class="mb-3 d-flex gap-2 flex-wrap">
+    <div class="input-group" style="max-width:360px">
+        <input type="text" name="search" value="@Search" class="form-control" placeholder="Search description or equipment…" />
+        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+    </div>
+    <select name="status" class="form-select" style="max-width:160px" onchange="this.form.submit()">
+        <option value="">All Statuses</option>
+        @foreach (var s in Enum.GetValues<FailureStatus>())
+        {
+            <option value="@s" selected="@(StatusFilter == s.ToString())">@s</option>
+        }
+    </select>
+    @if (!string.IsNullOrEmpty(Search) || !string.IsNullOrEmpty(StatusFilter))
+    {
+        <a href="/failures" class="btn btn-outline-danger">Clear</a>
+    }
+</form>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Equipment</th><th>Description</th><th>Severity</th>
+                    <th>Status</th><th>Report Date</th>
+                    <AuthorizeView Roles="Manager"><th></th></AuthorizeView>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in failures)
+                {
+                    <tr>
+                        <td class="fw-semibold">@item.Equipment.Name</td>
+                        <td>@item.Description</td>
+                        <td>
+                            @{
+                                var svBadge = item.Severity switch
+                                {
+                                    FailureSeverity.High => "bg-danger",
+                                    FailureSeverity.Medium => "bg-warning text-dark",
+                                    _ => "bg-info text-dark"
+                                };
+                            }
+                            <span class="badge @svBadge">@item.Severity</span>
+                        </td>
+                        <td>
+                            @{
+                                var stBadge = item.Status switch
+                                {
+                                    FailureStatus.Open => "bg-danger",
+                                    FailureStatus.InProgress => "bg-warning text-dark",
+                                    _ => "bg-success"
+                                };
+                            }
+                            <span class="badge @stBadge">@item.Status</span>
+                        </td>
+                        <td>@item.ReportDate.ToString("yyyy-MM-dd")</td>
+                        <AuthorizeView Roles="Manager">
+                            <td>
+                                <a href="/failures/edit/@item.Id" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                                <a href="/failures/delete/@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                            </td>
+                        </AuthorizeView>
+                    </tr>
+                }
+                @if (!failures.Any())
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">No failures found.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? Search { get; set; }
+    [SupplyParameterFromQuery] public string? Status { get; set; }
+    private string? StatusFilter => Status;
+
+    private List<Failure> failures = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        FailureStatus? statusFilter = null;
+        if (Enum.TryParse<FailureStatus>(Status, out var parsedStatus))
+            statusFilter = parsedStatus;
+
+        failures = await FailureService.GetAllAsync(Search, statusFilter);
+    }
+}

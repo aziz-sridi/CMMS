@@ -1,0 +1,56 @@
+@page "/technicians/delete/{Id:guid}"
+@attribute [Authorize(Roles = "Manager")]
+@inject ITechnicianService TechnicianService
+@inject NavigationManager Nav
+
+<PageTitle>Delete Technician — CMMS</PageTitle>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/technicians" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h2 class="mb-0">Delete Technician</h2>
+</div>
+
+@if (entity is not null)
+{
+    <div class="card border-danger shadow-sm" style="max-width:460px">
+        <div class="card-body">
+            @if (!string.IsNullOrEmpty(errorMessage)) { <div class="alert alert-danger">@errorMessage</div> }
+            <p class="text-danger fw-semibold">Delete this technician?</p>
+            <dl class="row">
+                <dt class="col-sm-4">Name</dt><dd class="col-sm-8">@entity.Name</dd>
+                <dt class="col-sm-4">Specialty</dt><dd class="col-sm-8">@entity.Specialty</dd>
+                <dt class="col-sm-4">Email</dt><dd class="col-sm-8">@entity.Email</dd>
+            </dl>
+            <EditForm Model="_confirm" method="post" OnValidSubmit="ExecuteDeleteAsync" FormName="confirm-delete">
+                <button type="submit" class="btn btn-danger me-2">Yes, Delete</button>
+                <a href="/technicians" class="btn btn-outline-secondary">Cancel</a>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private Technician? entity;
+    private string? errorMessage;
+    private readonly object _confirm = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        entity = await TechnicianService.GetByIdAsync(Id);
+        if (entity is null) Nav.NavigateTo("/technicians");
+    }
+
+    private async Task ExecuteDeleteAsync()
+    {
+        entity = await TechnicianService.GetByIdAsync(Id);
+        if (entity is null) { Nav.NavigateTo("/technicians"); return; }
+        if (await TechnicianService.HasInterventionsAsync(Id))
+        {
+            errorMessage = "Cannot delete a technician who has interventions.";
+            return;
+        }
+        await TechnicianService.DeleteAsync(Id);
+        Nav.NavigateTo("/technicians");
+    }
+}

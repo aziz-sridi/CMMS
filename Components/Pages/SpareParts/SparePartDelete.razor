@@ -1,0 +1,48 @@
+@page "/spare-parts/delete/{Id:guid}"
+@attribute [Authorize(Roles = "Manager")]
+@inject ISparePartService SparePartService
+@inject NavigationManager Nav
+
+<PageTitle>Delete Spare Part — CMMS</PageTitle>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/spare-parts" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h2 class="mb-0">Delete Spare Part</h2>
+</div>
+
+@if (entity is not null)
+{
+    <div class="card border-danger shadow-sm" style="max-width:440px">
+        <div class="card-body">
+            <p class="text-danger fw-semibold">Delete this spare part?</p>
+            <dl class="row">
+                <dt class="col-sm-4">Name</dt><dd class="col-sm-8">@entity.Name</dd>
+                <dt class="col-sm-4">Part Number</dt><dd class="col-sm-8 font-monospace">@entity.PartNumber</dd>
+                <dt class="col-sm-4">Equipment</dt><dd class="col-sm-8">@(entity.Equipment?.Name ?? "—")</dd>
+                <dt class="col-sm-4">Quantity</dt><dd class="col-sm-8">@entity.Quantity</dd>
+            </dl>
+            <EditForm Model="_confirm" method="post" OnValidSubmit="ExecuteDeleteAsync" FormName="confirm-delete">
+                <button type="submit" class="btn btn-danger me-2">Yes, Delete</button>
+                <a href="/spare-parts" class="btn btn-outline-secondary">Cancel</a>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private SparePart? entity;
+    private readonly object _confirm = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        entity = await SparePartService.GetByIdAsync(Id);
+        if (entity is null) Nav.NavigateTo("/spare-parts");
+    }
+
+    private async Task ExecuteDeleteAsync()
+    {
+        await SparePartService.DeleteAsync(Id);
+        Nav.NavigateTo("/spare-parts");
+    }
+}

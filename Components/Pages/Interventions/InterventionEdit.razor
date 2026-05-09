@@ -1,0 +1,138 @@
+@page "/interventions/edit/{Id:guid}"
+@attribute [Authorize]
+@inject IInterventionService InterventionService
+@inject IFailureService FailureService
+@inject ITechnicianService TechnicianService
+@inject NavigationManager Nav
+
+<PageTitle>Edit Intervention — CMMS</PageTitle>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/interventions" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h2 class="mb-0">Edit Intervention</h2>
+</div>
+
+<div class="card shadow-sm" style="max-width:620px">
+    <div class="card-body">
+        <EditForm Model="Input" method="post" OnValidSubmit="HandleSubmitAsync" FormName="edit-intervention">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="alert alert-danger" />
+
+            <AuthorizeView Roles="Manager" Context="authCtx">
+                <div class="mb-3">
+                    <label class="form-label">Failure</label>
+                    <InputSelect @bind-Value="Input!.FailureId" class="form-select">
+                        @foreach (var f in failures) { <option value="@f.Id">@f.Label</option> }
+                    </InputSelect>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Technician</label>
+                    <InputSelect @bind-Value="Input!.TechnicianId" class="form-select">
+                        @foreach (var t in technicians) { <option value="@t.Id">@t.Name</option> }
+                    </InputSelect>
+                </div>
+            </AuthorizeView>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Start Date</label>
+                    <InputDate @bind-Value="Input!.StartDate" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">End Date (optional)</label>
+                    <InputDate @bind-Value="Input!.EndDate" class="form-control" />
+                    <ValidationMessage For="() => Input!.EndDate" class="text-danger small" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Cost</label>
+                    <InputNumber @bind-Value="Input!.Cost" class="form-control" />
+                </div>
+            </div>
+            <div class="mt-3">
+                <label class="form-label">Notes</label>
+                <InputTextArea @bind-Value="Input!.Notes" rows="3" class="form-control" />
+            </div>
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger mt-3">@errorMessage</div>
+            }
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="/interventions" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    [SupplyParameterFromForm(FormName = "edit-intervention")] public InputModel? Input { get; set; }
+
+    private List<(Guid Id, string Label)> failures = new();
+    private List<Technician> technicians = new();
+    private string? errorMessage;
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var entity = await InterventionService.GetByIdAsync(Id);
+        if (entity is null) { Nav.NavigateTo("/interventions"); return; }
+
+        if (AuthState is not null)
+        {
+            var auth = await AuthState;
+            bool isManager = auth.User.IsInRole("Manager");
+            bool isOwner = auth.User.IsInRole("Technician") && entity.Technician.Email == auth.User.Identity?.Name;
+            if (!isManager && !isOwner) { Nav.NavigateTo("/interventions"); return; }
+        }
+
+        var allFailures = await FailureService.GetAllAsync();
+        failures = allFailures
+            .OrderBy(f => f.Equipment.Name)
+            .Select(f => (f.Id, $"{f.Equipment.Name} — {f.Description[..Math.Min(40, f.Description.Length)]}"))
+            .ToList();
+        technicians = await TechnicianService.GetAllAsync();
+
+        if (Input is null)
+        {
+            Input = new InputModel
+            {
+                FailureId = entity.FailureId, TechnicianId = entity.TechnicianId,
+                StartDate = entity.StartDate, EndDate = entity.EndDate,
+                Cost = entity.Cost, Notes = entity.Notes
+            };
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (Input!.EndDate.HasValue && Input.EndDate.Value < Input.StartDate)
+        {
+            errorMessage = "End date must be after start date.";
+            return;
+        }
+        var ok = await InterventionService.UpdateAsync(new Intervention
+        {
+            Id = Id,
+            FailureId = Input.FailureId,
+            TechnicianId = Input.TechnicianId,
+            StartDate = Input.StartDate.ToUniversalTime(),
+            EndDate = Input.EndDate?.ToUniversalTime(),
+            Cost = Input.Cost,
+            Notes = Input.Notes.Trim()
+        });
+        if (!ok) { Nav.NavigateTo("/interventions"); return; }
+        Nav.NavigateTo("/interventions");
+    }
+
+    public sealed class InputModel
+    {
+        public Guid FailureId { get; set; }
+        public Guid TechnicianId { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        [Range(0, double.MaxValue)] public double Cost { get; set; }
+        [StringLength(1000)] public string Notes { get; set; } = string.Empty;
+    }
+}

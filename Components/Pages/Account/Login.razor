@@ -1,0 +1,39 @@
+@page "/Identity/Account/Login"
+@layout CMMS.Components.Layout.MainLayout
+
+<PageTitle>Sign in — CMMS</PageTitle>
+
+<div class="d-flex justify-content-center mt-5">
+    <div class="auth-card">
+        <div class="auth-brand text-center mb-1">CMMS</div>
+        <div class="text-muted small text-center mb-4">Leoni Tunisia — sign in to continue</div>
+
+        @if (Error == "1")
+        {
+            <div class="alert alert-danger py-2 small">Invalid email or password.</div>
+        }
+
+        <form method="post" action="/Identity/Account/Login">
+            <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control" required autofocus />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" class="form-control" required />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Sign in</button>
+        </form>
+
+        <hr class="my-3" />
+        <p class="text-center small mb-0">
+            No account? <a href="/Identity/Account/Register">Register</a>
+        </p>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+    [SupplyParameterFromQuery(Name = "error")] public string? Error { get; set; }
+}

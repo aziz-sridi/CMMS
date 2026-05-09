@@ -1,0 +1,61 @@
+@page "/spare-parts"
+@attribute [Authorize]
+@inject ISparePartService SparePartService
+
+<PageTitle>Spare Parts — CMMS</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="bi bi-box-seam me-2"></i>Spare Parts</h2>
+    <AuthorizeView Roles="Manager">
+        <a href="/spare-parts/create" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Add Part</a>
+    </AuthorizeView>
+</div>
+
+<form method="get" class="mb-3">
+    <div class="input-group" style="max-width:380px">
+        <input type="text" name="search" value="@Search" class="form-control" placeholder="Search name or part number…" />
+        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+        @if (!string.IsNullOrEmpty(Search)) { <a href="/spare-parts" class="btn btn-outline-danger"><i class="bi bi-x-lg"></i></a> }
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Part Name</th><th>Part Number</th><th>Equipment</th><th>Qty</th>
+                    <AuthorizeView Roles="Manager"><th></th></AuthorizeView>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in parts)
+                {
+                    <tr>
+                        <td class="fw-semibold">@item.Name</td>
+                        <td class="font-monospace small">@item.PartNumber</td>
+                        <td>@(item.Equipment?.Name ?? "—")</td>
+                        <td><span class="badge @(item.Quantity == 0 ? "bg-danger" : item.Quantity < 5 ? "bg-warning text-dark" : "bg-success")">@item.Quantity</span></td>
+                        <AuthorizeView Roles="Manager">
+                            <td>
+                                <a href="/spare-parts/edit/@item.Id" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                                <a href="/spare-parts/delete/@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                            </td>
+                        </AuthorizeView>
+                    </tr>
+                }
+                @if (!parts.Any()) { <tr><td colspan="5" class="text-center text-muted py-4">No spare parts found.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? Search { get; set; }
+    private List<SparePart> parts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        parts = await SparePartService.GetAllAsync(Search);
+    }
+}

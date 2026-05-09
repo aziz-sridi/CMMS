@@ -1,0 +1,150 @@
+@page "/equipment/create"
+@attribute [Authorize(Roles = "Manager")]
+@inject IEquipmentService EquipmentService
+@inject ILocationService LocationService
+@inject NavigationManager Nav
+
+<PageTitle>Add Equipment — CMMS</PageTitle>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/equipment" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h2 class="mb-0">Add Equipment</h2>
+</div>
+
+<div class="card shadow-sm" style="max-width:700px">
+    <div class="card-body">
+        <EditForm Model="Input" method="post" OnValidSubmit="HandleSubmitAsync" FormName="create-equipment">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="alert alert-danger" />
+
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label class="form-label">Name</label>
+                    <InputText @bind-Value="Input!.Name" class="form-control" />
+                    <ValidationMessage For="() => Input!.Name" class="text-danger small" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Criticality (1–5)</label>
+                    <InputNumber @bind-Value="Input!.Criticality" class="form-control" min="1" max="5" />
+                    <ValidationMessage For="() => Input!.Criticality" class="text-danger small" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Serial Number</label>
+                    <InputText @bind-Value="Input!.SerialNumber" class="form-control font-monospace" />
+                    <ValidationMessage For="() => Input!.SerialNumber" class="text-danger small" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Status</label>
+                    <InputSelect @bind-Value="Input!.Status" class="form-select">
+                        @foreach (var s in Enum.GetValues<EquipmentStatus>())
+                        {
+                            <option value="@s">@s</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Location</label>
+                    <InputSelect @bind-Value="Input!.LocationId" class="form-select">
+                        <option value="@Guid.Empty">— Select location —</option>
+                        @foreach (var loc in locations)
+                        {
+                            <option value="@loc.Id">@loc.Name</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="() => Input!.LocationId" class="text-danger small" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Purchase Date</label>
+                    <InputDate @bind-Value="Input!.PurchaseDate" class="form-control" />
+                    <ValidationMessage For="() => Input!.PurchaseDate" class="text-danger small" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Purchase Cost (optional)</label>
+                    <InputNumber @bind-Value="Input!.PurchaseCost" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Expected Lifetime (months, optional)</label>
+                    <InputNumber @bind-Value="Input!.ExpectedLifetimeMonths" class="form-control" />
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger mt-3">@errorMessage</div>
+            }
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a href="/equipment" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm(FormName = "create-equipment")]
+    public InputModel? Input { get; set; }
+
+    private List<Location> locations = new();
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        locations = await LocationService.GetAllAsync();
+        Input ??= new InputModel { PurchaseDate = DateTime.Today, Criticality = 3 };
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (Input!.PurchaseDate > DateTime.Today)
+        {
+            errorMessage = "Purchase date cannot be in the future.";
+            return;
+        }
+
+        if (await EquipmentService.SerialNumberExistsAsync(Input.SerialNumber))
+        {
+            errorMessage = "Serial number already exists.";
+            return;
+        }
+
+        await EquipmentService.CreateAsync(new Domain.Entities.Equipment
+        {
+            Name = Input.Name.Trim(),
+            SerialNumber = Input.SerialNumber.Trim(),
+            Criticality = Input.Criticality,
+            PurchaseDate = Input.PurchaseDate.ToUniversalTime(),
+            PurchaseCost = Input.PurchaseCost,
+            ExpectedLifetimeMonths = Input.ExpectedLifetimeMonths,
+            Status = Input.Status,
+            LocationId = Input.LocationId
+        });
+
+        Nav.NavigateTo("/equipment");
+    }
+
+    public sealed class InputModel
+    {
+        [Required, StringLength(120, MinimumLength = 2)]
+        public string Name { get; set; } = string.Empty;
+
+        [Required, StringLength(80, MinimumLength = 3)]
+        public string SerialNumber { get; set; } = string.Empty;
+
+        [Range(1, 5)]
+        public int Criticality { get; set; } = 3;
+
+        public DateTime PurchaseDate { get; set; } = DateTime.Today;
+
+        [Range(0, double.MaxValue)]
+        public double? PurchaseCost { get; set; }
+
+        [Range(1, 1000)]
+        public int? ExpectedLifetimeMonths { get; set; }
+
+        public EquipmentStatus Status { get; set; }
+
+        [Required]
+        public Guid LocationId { get; set; }
+    }
+}

@@ -1,0 +1,101 @@
+@page "/failures/edit/{Id:guid}"
+@attribute [Authorize(Roles = "Manager")]
+@inject IFailureService FailureService
+@inject IEquipmentService EquipmentService
+@inject NavigationManager Nav
+
+<PageTitle>Edit Failure — CMMS</PageTitle>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/failures" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <h2 class="mb-0">Edit Failure</h2>
+</div>
+
+<div class="card shadow-sm" style="max-width:600px">
+    <div class="card-body">
+        <EditForm Model="Input" method="post" OnValidSubmit="HandleSubmitAsync" FormName="edit-failure">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="alert alert-danger" />
+
+            <div class="mb-3">
+                <label class="form-label">Equipment</label>
+                <InputSelect @bind-Value="Input!.EquipmentId" class="form-select">
+                    @foreach (var e in equipment) { <option value="@e.Id">@e.Name</option> }
+                </InputSelect>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Description</label>
+                <InputTextArea @bind-Value="Input!.Description" rows="3" class="form-control" />
+                <ValidationMessage For="() => Input!.Description" class="text-danger small" />
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Severity</label>
+                    <InputSelect @bind-Value="Input!.Severity" class="form-select">
+                        @foreach (var s in Enum.GetValues<FailureSeverity>()) { <option value="@s">@s</option> }
+                    </InputSelect>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Status</label>
+                    <InputSelect @bind-Value="Input!.Status" class="form-select">
+                        @foreach (var s in Enum.GetValues<FailureStatus>()) { <option value="@s">@s</option> }
+                    </InputSelect>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Report Date</label>
+                    <InputDate @bind-Value="Input!.ReportDate" class="form-control" />
+                </div>
+            </div>
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="/failures" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    [SupplyParameterFromForm(FormName = "edit-failure")] public InputModel? Input { get; set; }
+
+    private List<Domain.Entities.Equipment> equipment = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        equipment = await EquipmentService.GetAllAsync();
+        if (Input is null)
+        {
+            var entity = await FailureService.GetByIdAsync(Id);
+            if (entity is null) { Nav.NavigateTo("/failures"); return; }
+            Input = new InputModel
+            {
+                EquipmentId = entity.EquipmentId, Description = entity.Description,
+                ReportDate = entity.ReportDate, Severity = entity.Severity, Status = entity.Status
+            };
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        var ok = await FailureService.UpdateAsync(new Failure
+        {
+            Id = Id,
+            EquipmentId = Input!.EquipmentId,
+            Description = Input.Description.Trim(),
+            ReportDate = Input.ReportDate.ToUniversalTime(),
+            Severity = Input.Severity,
+            Status = Input.Status
+        });
+        if (!ok) { Nav.NavigateTo("/failures"); return; }
+        Nav.NavigateTo("/failures");
+    }
+
+    public sealed class InputModel
+    {
+        [Required] public Guid EquipmentId { get; set; }
+        [Required, StringLength(500, MinimumLength = 5)] public string Description { get; set; } = string.Empty;
+        public DateTime ReportDate { get; set; }
+        public FailureSeverity Severity { get; set; }
+        public FailureStatus Status { get; set; }
+    }
+}

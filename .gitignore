@@ -1,0 +1,19 @@
+## .NET
+bin/
+obj/
+*.user
+.vs/
+
+## SQLite database
+*.db
+*.db-shm
+*.db-wal
+
+## IDE / tooling
+.idea/
+.claude/
+
+## Secrets
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
